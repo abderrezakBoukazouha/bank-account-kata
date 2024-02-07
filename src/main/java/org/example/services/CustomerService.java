@@ -5,7 +5,6 @@ import org.example.entities.Account;
 import org.example.entities.Customer;
 import org.example.repositories.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @Service
-public class customerService {
+public class CustomerService {
 
     @Autowired
     CustomerRepository customerRepository;
@@ -29,7 +28,7 @@ public class customerService {
         Account account = Account.builder()
                 .amount(0)
                 .customer(customer)
-                .transactions(List.of())
+                .transas(List.of())
                 .build();
 
         customer.setAccount(account);

@@ -3,8 +3,9 @@ package org.example.entities;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.example.enums.Operation;
 
-import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 
 @Getter
@@ -13,19 +14,22 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Builder
-public class Account {
+public class Transa {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private double amount;
+    private Instant instant;
 
-    @OneToOne(mappedBy = "account")
+    @ManyToOne
     @JsonIgnore
-    private Customer customer;
+    private Account account;
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "transaction_id", referencedColumnName = "id")
-    private List<Transa> transas;
+    private Operation operation;
+
+    private double operationAmount;
+
+    private double balance;
+
 }

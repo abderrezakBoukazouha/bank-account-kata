@@ -2,18 +2,17 @@ package org.example.services;
 
 import org.example.dto.AccountDto;
 import org.example.entities.Account;
-import org.example.entities.Customer;
+import org.example.entities.Transa;
+import org.example.enums.Operation;
 import org.example.repositories.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Optional;
-
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import java.time.Instant;
+import static java.time.Clock.systemUTC;
+import static org.example.enums.Operation.*;
 
 @Service
 public class AccountService {
@@ -22,28 +21,45 @@ public class AccountService {
     AccountRepository accountRepository;
 
     @Autowired
-    customerService customerService;
+    CustomerService customerService;
 
-    public ResponseEntity<String> update(AccountDto accountDto, long id) throws ChangeSetPersister.NotFoundException {
+    @Autowired
+    TransaService transaService;
+
+    public ResponseEntity<String> update(AccountDto accountDto, long id) {
 
         Account account = customerService.findBankUserById(id).getAccount();
+        Operation operation = accountDto.getAmount() > 0 ? FUND : WITHDRAWAL;
         setNewAmount(accountDto.getAmount(), account);
+        addCurrentOperation(account, operation, accountDto.getAmount());
         return response(account.getAmount());
     }
 
-    public ResponseEntity<String> get(long id) throws ChangeSetPersister.NotFoundException {
+    public Account get(long id) {
         Account account = customerService.findBankUserById(id).getAccount();
-        return response(account.getAmount());
-
+        addCurrentOperation(account, CHECKED, 0);
+        // TODO : Tri operations
+        return account;
     }
 
     private void setNewAmount(double introducedAmount, Account account) {
         double currentAmount = account.getAmount();
         account.setAmount(currentAmount + introducedAmount);
-        accountRepository.save(account);
     }
 
-    private ResponseEntity<String> response (double amount) {
+    private ResponseEntity<String> response(double amount) {
         return new ResponseEntity<String>("current amount in the bank " + amount + " $", HttpStatus.CREATED);
+    }
+
+    private void addCurrentOperation(Account account, Operation operation, double operationAmount) {
+        Instant instant = Instant.now(systemUTC());
+        double currentAmount = account.getAmount();
+        Transa transa = Transa.builder()
+                .instant(instant).operation(operation)
+                .operationAmount(operationAmount).balance(currentAmount).account(account)
+                .build();
+
+        Account updateAccount = transaService.add(account, transa);
+        accountRepository.save(updateAccount);
     }
 }
